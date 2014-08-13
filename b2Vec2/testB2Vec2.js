@@ -77,4 +77,6 @@
 	end = new Date();
 	console.log("SIMD Multiply time : " + (end - start) + ",   bg = { " + bg.x + ", " + bg.y + " }");
 
+	
+
 })();

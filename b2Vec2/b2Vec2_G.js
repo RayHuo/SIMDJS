@@ -51,19 +51,21 @@ b2Vec2_G.prototype.MulM = function (A) {
    this.contents = SIMD.float64x2.add(scale_ACol1, scale_ACol2);
 };
 b2Vec2_G.prototype.MulTM = function (A) {
-   var tX = b2Math.Dot(this, A.col1);
-   this.contents.y = b2Math.Dot(this, A.col2);
-   this.contents.x = tX;
+   var Dot1 = SIMD.float64x2.mul(this.contents, A.col1.contents);
+   var Dot2 = SIMD.float64x2.mul(this.contents, A.col2.contents);
+   this.contents = SIMD.float64x2(Dot1.x + Dot1.y, Dot2.x + Dot2.y);
 };
 b2Vec2_G.prototype.CrossVF = function (s) {
    if (s === undefined) s = 0;
-   this.contents.x = s * this.contents.y;
-   this.contents.y = (-s * tX);
+   var tmp1 = SIMD.float64x2(this.contents.y, this.contents.x);
+   var tmp2 = SIMD.float64x2(s, -s);
+   this.contents = SIMD.float64x2.mul(tmp1, tmp2);
 };
 b2Vec2_G.prototype.CrossFV = function (s) {
    if (s === undefined) s = 0;
-   this.contents.x = (-s * this.contents.y);
-   this.contents.y = s * tX;
+   var tmp1 = SIMD.float64x2(this.contents.y, this.contents.x);
+   var tmp2 = SIMD.float64x2(-s, s);
+   this.contents = SIMD.float64x2.mul(tmp1, tmp2);
 };
 b2Vec2_G.prototype.MinV = function (b) {
    this.contents = SIMD.float64x2.min(this.contents, b.contents);
