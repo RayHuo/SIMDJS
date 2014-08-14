@@ -25,9 +25,6 @@
 	for(i = 0; i < test_time1; ++i) {
 		for(j = 0; j < test_time2; ++j) {
 			b.Add(tmp);
-			if(j == test_time2 - 1) {
-				b = new b2Vec2(1.0, 2.0);
-			}
 		}
 	}
 	end = new Date();
@@ -39,9 +36,6 @@
 	for(i = 0; i < test_time1; ++i) {
 		for(j = 0; j < test_time2; ++j) {
 			bg.Add(tmp);
-			if(j == test_time2 - 1) {
-				bg = new b2Vec2_G(1.0, 2.0);
-			}
 		}
 	}
 	end = new Date();
