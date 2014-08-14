@@ -4152,34 +4152,30 @@ Box2D.postDefs = [];
    b2Vec2.prototype.b2Vec2 = function (x_, y_) {
       if (x_ === undefined) x_ = 0;
       if (y_ === undefined) y_ = 0;
-      // this.x = x_;
-      // this.y = y_;
-      this.contents = SIMD.float64x2(x_, y_);
+      /*
+         The reason is with this, JS engine can know the type (via typed array)
+         without changing back and forth. But it still bring an extra memory 
+         load operations.
+      */
+      this.contents = new Float64x2Array(1);
+      this.contents[0] = SIMD.float64x2(x_, y_);
    }
    b2Vec2.prototype.SetZero = function () {
-      // this.x = 0.0;
-      // this.y = 0.0;
-      this.contents = SIMD.float64x2.zero();
+      this.contents[0] = SIMD.float64x2.zero();
    }
    b2Vec2.prototype.Set = function (x_, y_) {
       if (x_ === undefined) x_ = 0;
       if (y_ === undefined) y_ = 0;
-      // this.x = x_;
-      // this.y = y_;
-      this.contents = SIMD.float64x2(x_, y_);
+      this.contents[0] = SIMD.float64x2(x_, y_);
    }
    b2Vec2.prototype.SetV = function (v) {
-      // this.x = v.x;
-      // this.y = v.y;
-      this.contents = SIMD.float64x2(v.contents.x, v.contents.y);
+      this.contents[0] = SIMD.float64x2(v.contents[0].x, v.contents[0].y);
    }
    b2Vec2.prototype.GetNegative = function () {
-      return new b2Vec2((-this.contents.x), (-this.contents.y));
+      return new b2Vec2((-this.contents[0].x), (-this.contents[0].y));
    }
    b2Vec2.prototype.NegativeSelf = function () {
-      // this.x = (-this.x);
-      // this.y = (-this.y);
-      this.contents = SIMD.float64x2.neg(this.contents);
+      this.contents[0] = SIMD.float64x2.neg(this.contents[0]);
    }
    b2Vec2.Make = function (x_, y_) {
       if (x_ === undefined) x_ = 0;
@@ -4187,117 +4183,91 @@ Box2D.postDefs = [];
       return new b2Vec2(x_, y_);
    }
    b2Vec2.prototype.Copy = function () {
-      return new b2Vec2(this.contents.x, this.contents.y);
+      return new b2Vec2(this.contents[0].x, this.contents[0].y);
    }
    b2Vec2.prototype.Add = function (v) {
-      // this.x += v.x;
-      // this.y += v.y;
-      this.contents = SIMD.float64x2.add(this.contents, v.contents);
+      this.contents[0] = SIMD.float64x2.add(this.contents[0], v.contents[0]);
    }
    b2Vec2.prototype.Subtract = function (v) {
-      // this.x -= v.x;
-      // this.y -= v.y;
-      this.contents = SIMD.float64x2.sub(this.contents, v.contents);
+      this.contents[0] = SIMD.float64x2.sub(this.contents[0], v.contents[0]);
    }
    b2Vec2.prototype.Multiply = function (a) {
       if (a === undefined) a = 0;
-      // this.x *= a;
-      // this.y *= a;
-      this.contents = SIMD.float64x2.scale(this.contents, a);
+      this.contents[0] = SIMD.float64x2.scale(this.contents[0], a);
    }
    b2Vec2.prototype.MulM = function (A) {
-      // var tX = this.x;
-      // this.x = A.col1.x * tX + A.col2.x * this.y;
-      // this.y = A.col1.y * tX + A.col2.y * this.y;
-      var tX = this.contents.x;
-      var tY = this.contents.y;
-      var scale_ACol1 = SIMD.float64x2.scale(A.col1.contents, tX);
-      var scale_ACol2 = SIMD.float64x2.scale(A.col2.contents, tY);
-      this.contents = SIMD.float64x2.add(scale_ACol1, scale_ACol2);
+      var tX = this.contents[0].x;
+      var tY = this.contents[0].y;
+      var scale_ACol1 = SIMD.float64x2.scale(A.col1.contents[0], tX);
+      var scale_ACol2 = SIMD.float64x2.scale(A.col2.contents[0], tY);
+      this.contents[0] = SIMD.float64x2.add(scale_ACol1, scale_ACol2);
    }
    b2Vec2.prototype.MulTM = function (A) {
-      var tX = b2Math.Dot(this, A.col1);
-      this.contents.y = b2Math.Dot(this, A.col2);
-      this.contents.x = tX;
+      var Dot1 = SIMD.float64x2.mul(this.contents[0], A.col1.contents[0]);
+      var Dot2 = SIMD.float64x2.mul(this.contents[0], A.col2.contents[0]);
+      this.contents[0] = SIMD.float64x2(Dot1.x + Dot1.y, Dot2.x + Dot2.y);
    }
    b2Vec2.prototype.CrossVF = function (s) {
       if (s === undefined) s = 0;
-      // var tX = this.contents.x;
-      this.contents.x = s * this.contents.y;
-      this.contents.y = (-s * tX);
+      var tmp1 = SIMD.float64x2(this.contents[0].y, this.contents[0].x);
+      var tmp2 = SIMD.float64x2(s, -s);
+      this.contents[0] = SIMD.float64x2.mul(tmp1, tmp2);
    }
    b2Vec2.prototype.CrossFV = function (s) {
       if (s === undefined) s = 0;
-      // var tX = this.contents.x;
-      this.contents.x = (-s * this.contents.y);
-      this.contents.y = s * tX;
+      var tmp1 = SIMD.float64x2(this.contents[0].y, this.contents[0].x);
+      var tmp2 = SIMD.float64x2(-s, s);
+      this.contents[0] = SIMD.float64x2.mul(tmp1, tmp2);
    }
    b2Vec2.prototype.MinV = function (b) {
-      // this.x = this.x < b.x ? this.x : b.x;
-      // this.y = this.y < b.y ? this.y : b.y;
-      this.contents = SIMD.float64x2.min(this.contents, b.contents);
+      this.contents[0] = SIMD.float64x2.min(this.contents[0], b.contents[0]);
    }
    b2Vec2.prototype.MaxV = function (b) {
-      // this.x = this.x > b.x ? this.x : b.x;
-      // this.y = this.y > b.y ? this.y : b.y;
-      this.contents = SIMD.float64x2.max(this.contents, b.contents);
+      this.contents[0] = SIMD.float64x2.max(this.contents[0], b.contents[0]);
    }
    b2Vec2.prototype.Abs = function () {
-      // if (this.x < 0) this.x = (-this.x);
-      // if (this.y < 0) this.y = (-this.y);
-      this.contents = SIMD.float64x2.abs(this.contents);
+      this.contents[0] = SIMD.float64x2.abs(this.contents[0]);
    }
    b2Vec2.prototype.Length = function () {
-      // return Math.sqrt(this.x * this.x + this.y * this.y);
-      var tmp = SIMD.float64x2.mul(this.contents, this.contents);
+      var tmp = SIMD.float64x2.mul(this.contents[0], this.contents[0]);
       return Math.sqrt(tmp.x + tmp.y);
    }
    b2Vec2.prototype.LengthSquared = function () {
-      // return (this.x * this.x + this.y * this.y);
-      var tmp = SIMD.float64x2.mul(this.contents, this.contents);
+      var tmp = SIMD.float64x2.mul(this.contents[0], this.contents[0]);
       return (tmp.x + tmp.y);
    }
    b2Vec2.prototype.Normalize = function () {
-      // var length = Math.sqrt(this.x * this.x + this.y * this.y);
-      // if (length < Number.MIN_VALUE) {
-      //    return 0.0;
-      // }
-      // var invLength = 1.0 / length;
-      // this.x *= invLength;
-      // this.y *= invLength;
-      // return length;
-      var tmp = SIMD.float64x2.mul(this.contents, this.contents);
+      var tmp = SIMD.float64x2.mul(this.contents[0], this.contents[0]);
       var length = Math.sqrt(tmp.x + tmp.y);
       if(length < Number.MIN_VALUE) {
          return 0.0;
       }
       var invLength = 1.0 / length;
-      this.contents = SIMD.float64x2.scale(this.contents, invLength);
+      this.contents[0] = SIMD.float64x2.scale(this.contents[0], invLength);
       return length;
    }
    b2Vec2.prototype.IsValid = function () {
-      // return b2Math.IsValid(this.x) && b2Math.IsValid(this.y);
-      if(this.contents.x === undefined) this.contents.x = 0;
-      if(this.contents.y === undefined) this.contents.y = 0;
-      return isFinite(this.contents.x) && isFinite(this.contents.y);
+      if(this.contents[0].x === undefined) this.contents[0].x = 0;
+      if(this.contents[0].y === undefined) this.contents[0].y = 0;
+      return isFinite(this.contents[0].x) && isFinite(this.contents[0].y);
    }
    /*
       Additional functions
    */
    Object.defineProperty(b2Vec2.prototype, 'x', {
       get: function() { 
-         return this.contents.x; 
+         return this.contents[0].x; 
       },
       set: function(new_value) {
-         this.contents = SIMD.float64x2.withX(this.contents, new_value);
+         this.contents[0] = SIMD.float64x2.withX(this.contents[0], new_value);
       }
    });
    Object.defineProperty(b2Vec2.prototype, 'y', {
       get: function() { 
-         return this.contents.y;
+         return this.contents[0].y;
       },
       set: function(new_value) {
-         this.contents = SIMD.float64x2.withY(this.contents, new_value);
+         this.contents[0] = SIMD.float64x2.withY(this.contents[0], new_value);
       }
    });
 
@@ -10921,8 +10891,8 @@ Box2D.postDefs = [];
       s.strokeStyle = this._color(color.color, this.m_alpha);
       s.beginPath();
       //----------------------------------------------------------------
-      var p1_s = SIMD.float64x2.scale(p1.contents, drawScale);
-      var p2_s = SIMD.float64x2.scale(p2.contents, drawScale);
+      var p1_s = SIMD.float64x2.scale(p1.contents[0], drawScale);
+      var p2_s = SIMD.float64x2.scale(p2.contents[0], drawScale);
       s.moveTo(p1_s.x, p1_s.y);
       s.lineTo(p2_s.x, p2_s.y);
       //----------------------------------------------------------------
